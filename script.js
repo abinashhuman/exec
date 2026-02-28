@@ -121,15 +121,32 @@
 
   fadeTargets.forEach((el) => observer.observe(el));
 
-  /* ---- Profile photo — try multiple LinkedIn CDN patterns ---- */
-  // LinkedIn blocks hotlinking; we attempt a graceful avatar fallback
+  /* ---- Profile photo — hover/touch swap ---- */
   const photo = document.getElementById('profilePhoto');
   if (photo) {
-    photo.addEventListener('error', function () {
-      // Fallback to a styled initial avatar
-      this.src =
-        'https://ui-avatars.com/api/?name=Manish+Mittal&size=600&background=111111&color=c8a97e&bold=true&font-size=0.33&length=2';
+    const hoverSrc = photo.dataset.hoverSrc;
+    const defaultSrc = photo.dataset.defaultSrc;
+
+    // Preload hover image
+    if (hoverSrc) {
+      const preload = new Image();
+      preload.src = hoverSrc;
+    }
+
+    photo.addEventListener('mouseenter', function () {
+      if (hoverSrc) this.src = hoverSrc;
     });
+    photo.addEventListener('mouseleave', function () {
+      if (defaultSrc) this.src = defaultSrc;
+    });
+
+    // Touch support
+    photo.addEventListener('touchstart', function () {
+      if (hoverSrc) this.src = hoverSrc;
+    }, { passive: true });
+    photo.addEventListener('touchend', function () {
+      if (defaultSrc) this.src = defaultSrc;
+    }, { passive: true });
   }
 
   /* ---- Smooth scroll for anchor links (polyfill for Safari) ---- */
@@ -146,47 +163,6 @@
     });
   });
 
-  /* ---- Cursor glow effect (desktop only) ---- */
-  if (window.matchMedia('(hover: hover)').matches) {
-    const glow = document.createElement('div');
-    glow.id = 'cursor-glow';
-    glow.style.cssText = `
-      position: fixed;
-      pointer-events: none;
-      width: 400px;
-      height: 400px;
-      border-radius: 50%;
-      background: radial-gradient(ellipse, rgba(200,169,126,0.05) 0%, transparent 70%);
-      transform: translate(-50%, -50%);
-      z-index: 0;
-      transition: opacity 0.3s;
-      opacity: 0;
-    `;
-    document.body.appendChild(glow);
-
-    let mouseX = 0, mouseY = 0;
-    let glowX = 0, glowY = 0;
-
-    document.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      glow.style.opacity = '1';
-    });
-
-    document.addEventListener('mouseleave', () => {
-      glow.style.opacity = '0';
-    });
-
-    function animateGlow() {
-      glowX += (mouseX - glowX) * 0.08;
-      glowY += (mouseY - glowY) * 0.08;
-      glow.style.left = glowX + 'px';
-      glow.style.top = glowY + 'px';
-      requestAnimationFrame(animateGlow);
-    }
-    animateGlow();
-  }
-
   /* ---- Reveal hero immediately ---- */
   const heroContent = document.querySelector('.hero-content');
   const heroImage = document.querySelector('.hero-image-wrap');
@@ -195,30 +171,6 @@
       heroContent.classList.add('visible');
       if (heroImage) heroImage.classList.add('visible');
     }, 100);
-  }
-
-  /* ---- Typing text effect on hero eyebrow ---- */
-  const eyebrow = document.querySelector('.hero-eyebrow');
-  if (eyebrow) {
-    const originalText = eyebrow.textContent;
-    eyebrow.textContent = '';
-    eyebrow.style.borderRight = '1px solid rgba(200,169,126,0.7)';
-    eyebrow.style.display = 'inline-block';
-
-    let i = 0;
-    function typeChar() {
-      if (i < originalText.length) {
-        eyebrow.textContent += originalText[i];
-        i++;
-        setTimeout(typeChar, 40);
-      } else {
-        setTimeout(() => {
-          eyebrow.style.borderRight = 'none';
-        }, 800);
-      }
-    }
-
-    setTimeout(typeChar, 500);
   }
 
   /* ---- Initial nav check ---- */
